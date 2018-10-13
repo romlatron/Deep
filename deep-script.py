@@ -47,6 +47,34 @@ def preview(loader, classes):
     show_image(torchvision.utils.make_grid(images))
     print(' '.join('%5s' % classes[labels[j]] for j in range(4)))
 
+def image_mover(image_width, image_height, move_rate, shrink_factor, terminate_size=64):
+    # TODO actually shrink the image here using
+    # https://pytorch.org/docs/master/torchvision/transforms.html#torchvision.transforms.functional.resized_crop
+    # Define window size here
+    square_len = min(image_height, image_width)
+
+    # While window size is not below our terminate size (training images), continue to shrink it
+    while square_len >= terminate_size:
+        # Reset position for new scanning iteration
+        pos = [0, 0]
+
+        # While vertical square boundaries do not exceed image, continue to image
+        while square_len + pos[1] <= image_height:
+            # While vertical square boundaries do not exceed image, continue to row
+            while square_len + pos[0] <= image_width:
+                # TODO here and then maybe push it to an array?
+                print("Snipping x {} y {} at square size {} \t (scale factor {})".format(pos[0], pos[1], square_len, 64.0 / square_len))
+                # Move square to the right (move rate is in the interval ]0;1])
+                pos[0] += max(int(square_len * move_rate), 2)
+
+            # Scan of the row has been completed, reset row position
+            pos[0] = 0
+            # Move to an overlapping row below (move rate is in the interval ]0;1])
+            pos[1] += max(int(square_len * move_rate), 2)
+
+        # Shrink square (shrink rate ]0;1[) after image scan with current size terminated
+        square_len *= shrink_factor
+
 def train_net(net, train_loader):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=.001, momentum=.9)
