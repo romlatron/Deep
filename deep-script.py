@@ -45,7 +45,7 @@ class Net(nn.Module):
         self.conv2 = nn.Conv2d(6, 16, 5)
         self.fc1 = nn.Linear(576, 120)
         self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        self.fc3 = nn.Linear(84, 2)
 
     def num_flat_features(self, x):
         size = x.size()[1:]
@@ -222,14 +222,17 @@ def main():
 
     fig, ax = plt.subplots(1)
     ax.imshow(img)
+    count = 0
     for window_wrap in window_array:
         crop_real = transform(window_wrap.data)
         outputs = net(crop_real.unsqueeze(0))
         _, predicted = torch.max(outputs.data, 1)
-        if predicted[0] == 1:
+        if outputs.data[0][1] > .4 and predicted[0] == 1:
             print("Face detected")
             rect = patches.Rectangle(window_wrap.getTopLeft(), window_wrap.width, window_wrap.height, linewidth=1, edgecolor='r', facecolor='none')
             ax.add_patch(rect)
+            count += 1
+    print("{} faces detected".format(count))
 
     plt.show()
 
