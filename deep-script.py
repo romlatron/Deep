@@ -1,12 +1,39 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import torchvision
-import torchvision.transforms as transforms
-import matplotlib.pyplot as plt
 import numpy as np
+
+import torch
+from torch import nn, optim
+import torch.nn.functional as F
+
+import torchvision
+from torchvision import transforms
+from PIL import Image
+
+import matplotlib.pyplot as plt
 import argparse
+
+
+def load_single_image(image_path):
+    return Image.open(image_path, "r").convert('RGB')
+
+class WindowWrapper():
+    def __init__(self, image, x, y, width, height):
+        self.data = image
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+
+    def getTopLeft(self):
+        return (self.x, self.y)
+
+    def getTopRight(self):
+        return (self.x + self.width, self.y)
+
+    def getBottomLeft(self):
+        return (self.x, self.y + self.height)
+
+    def getBottomRight(self):
+        return (self.x + self.width, self.y + self.height)
 
 
 class Net(nn.Module):
@@ -47,11 +74,10 @@ def preview(loader, classes):
     show_image(torchvision.utils.make_grid(images))
     print(' '.join('%5s' % classes[labels[j]] for j in range(4)))
 
-def image_mover(image_width, image_height, move_rate, shrink_factor, terminate_size=64):
-    # TODO actually shrink the image here using
-    # https://pytorch.org/docs/master/torchvision/transforms.html#torchvision.transforms.functional.resized_crop
+def image_mover(pil_image, move_rate, shrink_factor, terminate_size=36, debug=False):
     # Define window size here
-    square_len = min(image_height, image_width)
+    square_len = min(pil_image.size)
+    windows = []
 
     # While window size is not below our terminate size (training images), continue to shrink it
     while square_len >= terminate_size:
@@ -59,11 +85,19 @@ def image_mover(image_width, image_height, move_rate, shrink_factor, terminate_s
         pos = [0, 0]
 
         # While vertical square boundaries do not exceed image, continue to image
-        while square_len + pos[1] <= image_height:
+        while square_len + pos[1] <= pil_image.size[1]:
             # While vertical square boundaries do not exceed image, continue to row
-            while square_len + pos[0] <= image_width:
-                # TODO here and then maybe push it to an array?
-                print("Snipping x {} y {} at square size {} \t (scale factor {})".format(pos[0], pos[1], square_len, 64.0 / square_len))
+            while square_len + pos[0] <= pil_image.size[0]:
+                if debug:
+                    print("Snipping x {} y {} at square size {} \t (scale factor {})".format(pos[0], pos[1], square_len, 64.0 / square_len))
+
+                crop = transforms.functional.resized_crop(pil_image, pos[1], pos[0], square_len, square_len, terminate_size)
+                windows.append(WindowWrapper(crop, pos[0], pos[1], square_len, square_len))
+
+                if debug:
+                    plt.imshow(windows[-1])
+                    plt.show()
+
                 # Move square to the right (move rate is in the interval ]0;1])
                 pos[0] += max(int(square_len * move_rate), 2)
 
@@ -74,6 +108,7 @@ def image_mover(image_width, image_height, move_rate, shrink_factor, terminate_s
 
         # Shrink square (shrink rate ]0;1[) after image scan with current size terminated
         square_len *= shrink_factor
+    return windows
 
 def train_net(net, train_loader):
     criterion = nn.CrossEntropyLoss()
@@ -180,6 +215,18 @@ def main():
             preview(test_loader, classes)
 
         test_net(net, test_loader, classes)
+
+    img = load_single_image(args.image)
+    window_array = image_mover(img, 0.4, 0.6)
+
+    for window_wrap in window_array:
+        crop_real = transform(window_wrap.data)
+        outputs = net(crop_real.unsqueeze(0))
+        _, predicted = torch.max(outputs.data, 1)
+        if predicted[0] == 1:
+            print("Face detected")
+            # plt.imshow(window_wrap.data)
+            # plt.show()
 
 if __name__ == "__main__":
     main()
