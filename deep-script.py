@@ -9,6 +9,7 @@ from torchvision import transforms
 from PIL import Image
 
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import argparse
 
 
@@ -219,14 +220,18 @@ def main():
     img = load_single_image(args.image)
     window_array = image_mover(img, 0.4, 0.6)
 
+    fig, ax = plt.subplots(1)
+    ax.imshow(img)
     for window_wrap in window_array:
         crop_real = transform(window_wrap.data)
         outputs = net(crop_real.unsqueeze(0))
         _, predicted = torch.max(outputs.data, 1)
         if predicted[0] == 1:
             print("Face detected")
-            # plt.imshow(window_wrap.data)
-            # plt.show()
+            rect = patches.Rectangle(window_wrap.getTopLeft(), window_wrap.width, window_wrap.height, linewidth=1, edgecolor='r', facecolor='none')
+            ax.add_patch(rect)
+
+    plt.show()
 
 if __name__ == "__main__":
     main()
