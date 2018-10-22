@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import argparse
 
-
 def load_single_image(image_path):
     return Image.open(image_path, "r").convert('RGB')
 
@@ -43,6 +42,8 @@ class Net(nn.Module):
         self.conv1 = nn.Conv2d(3, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5)
+        self.conv3 = nn.Conv2d(16, 32, 5)
+        self.fc0 = nn.Linear(32, 576)
         self.fc1 = nn.Linear(576, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 2)
@@ -57,7 +58,9 @@ class Net(nn.Module):
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(F.relu(self.conv3(x)))
         x = x.view(-1, self.num_flat_features(x))
+        x = F.relu(self.fc0(x))
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
@@ -111,11 +114,10 @@ def image_mover(pil_image, move_rate, shrink_factor, terminate_size=36, debug=Fa
         square_len *= shrink_factor
     return windows
 
-def train_net(net, train_loader):
+def train_net(net, train_loader, n_epoch):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=.001, momentum=.9)
-
-    for iteration in range(2):
+    for iteration in range(n_epoch):
         last_loss = float("inf")
         running_loss = .0
         early_stop = False
@@ -131,7 +133,7 @@ def train_net(net, train_loader):
             if i % 2000 == 1999:
                 print('[%d, %5d] loss: %.3f' % (iteration + 1, i + 1, running_loss / 2000))
                 if last_loss < running_loss:
-                    early_stop = True
+                    early_stop = False
                     break
                 last_loss = running_loss
                 running_loss = 0.0
@@ -178,6 +180,7 @@ def main():
                                             'Romain Latron, Beonît Zhong, Martin Haug. 2018 All rights reserved.')
 
     parser.add_argument('image', help='Image to recognize faces on')
+    parser.add_argument('--epoch', help='Number of epoch', type=int, default=5)
     parser.add_argument('-m', '--model', help='Pass a model file to skip training')
     parser.add_argument('-t', '--train', help='A folder with correctly labeled training data. '
                                               'Will save at model path if option is specified.')
@@ -201,7 +204,7 @@ def main():
         train_loader = torch.utils.data.DataLoader(train_set, batch_size=4, shuffle=True, num_workers=2)
         if args.training_preview:
             preview(train_loader, classes)
-        train_net(net, train_loader)
+        train_net(net, train_loader, args.epoch)
         if args.model is not None:
             torch.save(net.state_dict(), args.model)
             print("Saved model at {}".format(args.model))
