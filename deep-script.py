@@ -96,7 +96,7 @@ def image_mover(pil_image, move_rate, shrink_factor, terminate_size=36, debug=Fa
                 windows.append(WindowWrapper(crop, pos[0], pos[1], square_len, square_len))
 
                 if debug:
-                    plt.imshow(windows[-1])
+                    plt.imshow(windows[-1].data)
                     plt.show()
 
                 # Move square to the right (move rate is in the interval ]0;1])
@@ -131,7 +131,7 @@ def train_net(net, train_loader):
             if i % 2000 == 1999:
                 print('[%d, %5d] loss: %.3f' % (iteration + 1, i + 1, running_loss / 2000))
                 if last_loss < running_loss:
-                    early_stop = True
+                    # early_stop = True
                     break
                 last_loss = running_loss
                 running_loss = 0.0
@@ -227,7 +227,7 @@ def main():
         crop_real = transform(window_wrap.data)
         outputs = net(crop_real.unsqueeze(0))
         _, predicted = torch.max(outputs.data, 1)
-        if outputs.data[0][1] > .4 and predicted[0] == 1:
+        if outputs.data[0][1] > .8 and predicted[0] == 1:
             print("Face detected")
             rect = patches.Rectangle(window_wrap.getTopLeft(), window_wrap.width, window_wrap.height, linewidth=1, edgecolor='r', facecolor='none')
             ax.add_patch(rect)
