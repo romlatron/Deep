@@ -9,8 +9,9 @@ from torchvision import transforms
 from PIL import Image
 
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
+from matplotlib import patches, colors
 import argparse
+
 
 def load_single_image(image_path):
     return Image.open(image_path, "r").convert('L')
@@ -22,6 +23,8 @@ class WindowWrapper():
         self.y = y
         self.width = width
         self.height = height
+        self.face = False
+        self.score = 0
 
     def getTopLeft(self):
         return (self.x, self.y)
@@ -34,6 +37,10 @@ class WindowWrapper():
 
     def getBottomRight(self):
         return (self.x + self.width, self.y + self.height)
+
+    def isFace(self, score):
+        self.face = True
+        self.score = score
 
 
 class Net(nn.Module):
@@ -134,7 +141,8 @@ def train_net(net, train_loader, n_epoch):
                 print('[%d, %5d] loss: %.3f' % (iteration + 1, i + 1, running_loss / 2000))
                 if last_loss < running_loss:
                     # early_stop = True
-                    break
+                    # break
+                    pass
                 last_loss = running_loss
                 running_loss = 0.0
         if early_stop:
@@ -230,18 +238,33 @@ def main():
     fig, ax = plt.subplots(1)
     ax.imshow(img)
     count = 0
-    rects = {}
+    lowest = float("inf")
+    highest = 0
     for window_wrap in window_array:
         crop_real = transform(window_wrap.data)
         outputs = net(crop_real.unsqueeze(0))
         _, predicted = torch.max(outputs.data, 1)
-        if outputs.data[0][1] > .8 and predicted[0] == 1:
+        if outputs.data[0][1] > .6 and predicted[0] == 1:
+            window_wrap.isFace(outputs.data[0][1])
+            if outputs.data[0][1] > highest:
+                highest = outputs.data[0][1]
+
+            if outputs.data[0][1] < lowest:
+                lowest = outputs.data[0][1]
+
             print("Face detected")
-            rect = patches.Rectangle(window_wrap.getTopLeft(), window_wrap.width, window_wrap.height, linewidth=1, edgecolor='r', facecolor='none')
-            rects[rect] = outputs.data[0][1]
-            ax.add_patch(rect)
             count += 1
     print("{} faces detected".format(count))
+
+    rects = {}
+    for window_wrap in window_array:
+        if not window_wrap.face:
+            continue
+        rect = patches.Rectangle(window_wrap.getTopLeft(), window_wrap.width, window_wrap.height, linewidth=2,
+                                 edgecolor=colors.hsv_to_rgb((0, (lowest - window_wrap.score) / (lowest - highest), 1)), facecolor='none')
+        rects[rect] = window_wrap.score
+        ax.add_patch(rect)
+
     keys = list(rects.keys())
     for i in range(len(keys)):
         rect = keys[i]
@@ -251,14 +274,14 @@ def main():
             path2 = rect2.get_patch_transform().transform_path(rect2.get_path())
             pc = path2.intersects_path(path) | path2.contains_path(path) | path.contains_path(path2)
             if pc and rects[rect]>rects[rect2]:
-                rect.set_edgecolor('r')
-                rect2.set_edgecolor('b')
+                rect.set_linewidth(2)
+                rect2.set_linewidth(0.5)
             elif pc and rects[rect]<rects[rect2]:
-                rect.set_edgecolor('b')
-                rect2.set_edgecolor('r')
+                rect.set_linewidth(0.5)
+                rect2.set_linewidth(2)
             elif pc and rects[rect]==rects[rect2]:
-                rect.set_edgecolor('g')
-                rect2.set_edgecolor('g')
+                rect.set_linewidth(1)
+                rect2.set_linewidth(1)
 
 
     plt.show()

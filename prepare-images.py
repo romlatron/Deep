@@ -22,8 +22,8 @@ if __name__ == "__main__":
                 im = im.crop((0, offset, square, im.size[1] - offset))
             im = im.resize((36,36))
             image_list.append(im)
-            plt.imshow(image_list[-1])
-            plt.show()
+            # plt.imshow(image_list[-1])
+            # plt.show()
             im.save('{}/out/{}.jpg'.format(sys.argv[1], time.time()))
         except OSError:
             print("Ba dum ts")
