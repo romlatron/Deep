@@ -13,7 +13,7 @@ import matplotlib.patches as patches
 import argparse
 
 def load_single_image(image_path):
-    return Image.open(image_path, "r").convert('RGB')
+    return Image.open(image_path, "r").convert('L')
 
 class WindowWrapper():
     def __init__(self, image, x, y, width, height):
@@ -39,7 +39,7 @@ class WindowWrapper():
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
+        self.conv1 = nn.Conv2d(1, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5)
         self.conv3 = nn.Conv2d(16, 32, 5)
@@ -173,6 +173,10 @@ def test_net(net, test_loader, classes):
         print('Accuracy of %5s : %2d %%' % (
             classes[i], 100 * class_correct[i] / class_total[i]))
 
+def grayscale_loader(path):
+    with open(path, 'rb') as f:
+        img = Image.open(f)
+        return img.convert('L')
 
 def main():
     parser = argparse.ArgumentParser(description='A deep learning powered face recognition app.',
@@ -200,7 +204,7 @@ def main():
     if args.train is None and args.model is None:
         print("You have to specify a model or a train set to use the net")
     elif args.train is not None:
-        train_set = torchvision.datasets.ImageFolder(root=args.train, transform=transform)
+        train_set = torchvision.datasets.ImageFolder(root=args.train, transform=transform, loader=grayscale_loader)
         train_loader = torch.utils.data.DataLoader(train_set, batch_size=4, shuffle=True, num_workers=2)
         if args.training_preview:
             preview(train_loader, classes)
@@ -213,7 +217,7 @@ def main():
         print("Loaded model from {}".format(args.model))
 
     if args.test is not None:
-        test_set = torchvision.datasets.ImageFolder(root=args.test, transform=transform)
+        test_set = torchvision.datasets.ImageFolder(root=args.test, transform=transform, loader=grayscale_loader)
         test_loader = torch.utils.data.DataLoader(test_set, batch_size=4, shuffle=True, num_workers=2)
         if args.test_preview:
             preview(test_loader, classes)
@@ -226,6 +230,7 @@ def main():
     fig, ax = plt.subplots(1)
     ax.imshow(img)
     count = 0
+    rects = {}
     for window_wrap in window_array:
         crop_real = transform(window_wrap.data)
         outputs = net(crop_real.unsqueeze(0))
@@ -233,9 +238,28 @@ def main():
         if outputs.data[0][1] > .8 and predicted[0] == 1:
             print("Face detected")
             rect = patches.Rectangle(window_wrap.getTopLeft(), window_wrap.width, window_wrap.height, linewidth=1, edgecolor='r', facecolor='none')
+            rects[rect] = outputs.data[0][1]
             ax.add_patch(rect)
             count += 1
     print("{} faces detected".format(count))
+    keys = list(rects.keys())
+    for i in range(len(keys)):
+        rect = keys[i]
+        for j in range(i+1,len(keys)):
+            rect2 = keys[j]
+            path = rect.get_patch_transform().transform_path(rect.get_path())
+            path2 = rect2.get_patch_transform().transform_path(rect2.get_path())
+            pc = path2.intersects_path(path) | path2.contains_path(path) | path.contains_path(path2)
+            if pc and rects[rect]>rects[rect2]:
+                rect.set_edgecolor('r')
+                rect2.set_edgecolor('b')
+            elif pc and rects[rect]<rects[rect2]:
+                rect.set_edgecolor('b')
+                rect2.set_edgecolor('r')
+            elif pc and rects[rect]==rects[rect2]:
+                rect.set_edgecolor('g')
+                rect2.set_edgecolor('g')
+
 
     plt.show()
 
