@@ -121,7 +121,7 @@ def image_mover(pil_image, move_rate, shrink_factor, terminate_size=36, debug=Fa
         square_len *= shrink_factor
     return windows
 
-def train_net(net, train_loader, n_epoch):
+def train_net(net, train_loader, n_epoch, cuda=False):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=.001, momentum=.9)
     for iteration in range(n_epoch):
@@ -130,6 +130,9 @@ def train_net(net, train_loader, n_epoch):
         early_stop = False
         for i, data in enumerate(train_loader, 0):
             inputs, labels = data
+            if cuda:
+                inputs, labels = inputs.to("cuda:0"), labels.to("cuda:0")
+
             optimizer.zero_grad()
             outputs = net(inputs)
             loss = criterion(outputs, labels)
@@ -150,12 +153,15 @@ def train_net(net, train_loader, n_epoch):
             break
     print('Finished Training')
 
-def test_net(net, test_loader, classes):
+def test_net(net, test_loader, classes, cuda=False):
     correct = 0
     total = 0
     with torch.no_grad():
         for data in test_loader:
             images, labels = data
+            if cuda:
+                images, labels = images.to("cuda:0"), labels.to("cuda:0")
+
             outputs = net(images)
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
@@ -169,6 +175,9 @@ def test_net(net, test_loader, classes):
     with torch.no_grad():
         for data in test_loader:
             images, labels = data
+            if cuda:
+                images, labels = images.to("cuda:0"), labels.to("cuda:0")
+
             outputs = net(images)
             _, predicted = torch.max(outputs, 1)
             c = (predicted == labels).squeeze()
@@ -204,6 +213,9 @@ def main():
 
     classes = ('noface', 'face')
     net = Net()
+    if torch.cuda.is_available():
+        net.to("cuda:0")
+        print("On GPU!")
 
     if args.train is None and args.model is None:
         print("You have to specify a model or a train set to use the net")
@@ -212,7 +224,7 @@ def main():
         train_loader = torch.utils.data.DataLoader(train_set, batch_size=4, shuffle=True, num_workers=2)
         if args.training_preview:
             preview(train_loader, classes)
-        train_net(net, train_loader, args.epoch)
+        train_net(net, train_loader, args.epoch, torch.cuda.is_available())
         if args.model is not None:
             torch.save(net.state_dict(), args.model)
             print("Saved model at {}".format(args.model))
@@ -226,7 +238,7 @@ def main():
         if args.test_preview:
             preview(test_loader, classes)
 
-        test_net(net, test_loader, classes)
+        test_net(net, test_loader, classes, torch.cuda.is_available())
 
     img = load_single_image(args.image)
     window_array = image_mover(img, 0.4, 0.6)
@@ -238,9 +250,11 @@ def main():
     highest = 0
     for window_wrap in window_array:
         crop_real = transform(window_wrap.data)
+        if torch.cuda.is_available():
+            crop_real = crop_real.to("cuda:0")
         outputs = net(crop_real.unsqueeze(0))
         _, predicted = torch.max(outputs.data, 1)
-        if outputs.data[0][1] > .5 and predicted[0] == 1:
+        if outputs.data[0][1] > 2.5 and predicted[0] == 1:
             window_wrap.isFace(outputs.data[0][1])
             if outputs.data[0][1] > highest:
                 highest = outputs.data[0][1]
