@@ -46,11 +46,19 @@ class WindowWrapper():
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.conv3 = nn.Conv2d(16, 32, 5)
-        self.fc0 = nn.Linear(32, 576)
+        self.branch1_1 = nn.Conv2d(1, 64, 1, padding=1)
+
+        self.branch3_1 = nn.Conv2d(1, 64, 1, padding=1)
+        self.branch3_2 = nn.Conv2d(64, 96, 3, padding=1)
+        self.branch3_3 = nn.Conv2d(96, 96, 3, padding=1)
+
+        self.branch5_1 = nn.Conv2d(1, 48, 1, padding=1)
+        self.branch5_2 = nn.Conv2d(48, 64, 5, padding=2)
+
+        self.branch_pool = nn.Conv2d(1, 64, kernel_size=1, padding=1)
+        self.reduce = nn.Conv2d(288, 8, kernel_size=1)
+
+        self.fc0 = nn.Linear(11552, 576)
         self.fc1 = nn.Linear(576, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 2)
@@ -63,9 +71,21 @@ class Net(nn.Module):
         return num_features
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = self.pool(F.relu(self.conv3(x)))
+        branch1 = F.relu(self.branch1_1(x))
+
+        branch2 = F.relu(self.branch3_1(x))
+        branch2 = F.relu(self.branch3_2(branch2))
+        branch2 = F.relu(self.branch3_3(branch2))
+
+        branch3 = F.relu(self.branch5_1(x))
+        branch3 = F.relu(self.branch5_2(branch3))
+
+        branch_pool = F.avg_pool2d(x, kernel_size=3, stride=1, padding=1)
+        branch_pool = self.branch_pool(branch_pool)
+
+        x = torch.cat([branch1, branch2, branch3, branch_pool], 1)
+        x = self.reduce(x)
+
         x = x.view(-1, self.num_flat_features(x))
         x = F.relu(self.fc0(x))
         x = F.relu(self.fc1(x))
@@ -258,7 +278,7 @@ def main():
             crop_real = crop_real.to("cuda:0")
         outputs = net(crop_real.unsqueeze(0))
         _, predicted = torch.max(outputs.data, 1)
-        if outputs.data[0][1] > 2.6 and predicted[0] == 1:
+        if outputs.data[0][1] > .5 and predicted[0] == 1:
             window_wrap.isFace(outputs.data[0][1])
             if outputs.data[0][1] > highest:
                 highest = outputs.data[0][1]
