@@ -5,11 +5,11 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import glob
 
-if __name__ == "__main__":
+def processType(type):
     image_list = []
     if not os.path.exists('{}/out'.format(sys.argv[1])):
         os.mkdir('{}/out'.format(sys.argv[1]))
-    for filename in glob.glob('{}/*.jpg'.format(sys.argv[1])):
+    for filename in glob.glob('{}/*.{}'.format(sys.argv[1], type)):
         try:
             im=Image.open(filename).convert('LA').convert('RGB')
             square = min(im.size)
@@ -27,3 +27,9 @@ if __name__ == "__main__":
             im.save('{}/out/{}.jpg'.format(sys.argv[1], time.time()))
         except OSError:
             print("Ba dum ts")
+
+
+if __name__ == "__main__":
+    types = ["jpeg", "jpg", "gif", "png"]
+    for type in types:
+        processType(type)
