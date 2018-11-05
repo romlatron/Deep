@@ -46,19 +46,18 @@ class WindowWrapper():
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.branch1_1 = nn.Conv2d(1, 24, 1, padding=1)
+        self.branch1_1 = nn.Conv2d(1, 12, 1, padding=1)
 
-        self.branch3_1 = nn.Conv2d(1, 24, 1, padding=1)
-        self.branch3_2 = nn.Conv2d(24, 36, 3, padding=1)
-        self.branch3_3 = nn.Conv2d(36, 36, 3, padding=1)
+        self.branch3_1 = nn.Conv2d(1, 12, 1, padding=1)
+        self.branch3_2 = nn.Conv2d(12, 16, 3, padding=1)
 
-        self.branch5_1 = nn.Conv2d(1, 18, 1, padding=1)
-        self.branch5_2 = nn.Conv2d(18, 24, 5, padding=2)
+        self.branch5_1 = nn.Conv2d(1, 24, 1, padding=1)
+        self.branch5_2 = nn.Conv2d(24, 36, 3, padding=1)
+        self.branch5_3 = nn.Conv2d(36, 36, 3, padding=1)
 
-        self.branch_pool = nn.Conv2d(1, 24, kernel_size=1, padding=1)
         # self.reduce = nn.Conv2d(108, 8, kernel_size=1)
         self.pool = nn.MaxPool2d(3,3)
-        self.fc0 = nn.Linear(15552, 576)
+        self.fc0 = nn.Linear(9216, 576)
         self.fc1 = nn.Linear(576, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 2)
@@ -75,15 +74,12 @@ class Net(nn.Module):
 
         branch2 = self.branch3_1(x)
         branch2 = self.branch3_2(branch2)
-        branch2 = self.branch3_3(branch2)
 
         branch3 = self.branch5_1(x)
         branch3 = self.branch5_2(branch3)
+        branch3 = self.branch5_3(branch3)
 
-        branch_pool = F.avg_pool2d(x, kernel_size=3, stride=1, padding=1)
-        branch_pool = self.branch_pool(branch_pool)
-
-        x = torch.cat([branch1, branch2, branch3, branch_pool], 1)
+        x = torch.cat([branch1, branch2, branch3], 1)
         x = self.pool(x)
 
         x = x.view(-1, self.num_flat_features(x))
