@@ -73,5 +73,7 @@ Todo
 
 ## Improvements ideas
 Some improvements can include:
+ - Collecting more data for the training
+ - Have as many face and noface images
  - More layers for the neural network
  - Dataset with colors instead of greyscale
