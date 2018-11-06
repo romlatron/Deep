@@ -187,8 +187,14 @@ def test_net(net, test_loader, classes, cuda=False):
                 class_total[label] += 1
 
     for i in range(len(classes)):
-        print('Accuracy of %5s : %2d %%' % (
-            classes[i], 100 * class_correct[i] / class_total[i]))
+        recall = 100*class_correct[i] / class_total[i]
+        precision = 100 * class_correct[i] / total
+        print('Precision of %5s : %2d %%' % (
+            classes[i], precision))
+        print('Recall of %5s : %2d %%' % (
+            classes[i], recall))
+        print('F1 score of %5s : %2d %%' % (
+            classes[i], 2 * precision*recall/(precision+recall)))
 
 def grayscale_loader(path):
     with open(path, 'rb') as f:
