@@ -172,6 +172,7 @@ def test_net(net, test_loader, classes, cuda=False):
 
     class_correct = list(0. for i in range(len(classes)))
     class_total = list(0. for i in range(len(classes)))
+    class_predicted = list(0. for i in range(len(classes)))
     with torch.no_grad():
         for data in test_loader:
             images, labels = data
@@ -185,10 +186,11 @@ def test_net(net, test_loader, classes, cuda=False):
                 label = labels[i]
                 class_correct[label] += c[i].item()
                 class_total[label] += 1
+                class_predicted [predicted[i]] += 1
 
     for i in range(len(classes)):
         recall = 100*class_correct[i] / class_total[i]
-        precision = 100 * class_correct[i] / total
+        precision = 100 * class_correct[i] / class_predicted [i]
         print('Precision of %5s : %2d %%' % (
             classes[i], precision))
         print('Recall of %5s : %2d %%' % (
