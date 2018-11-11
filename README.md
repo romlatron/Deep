@@ -72,6 +72,7 @@ Finally, the other outliers are rendered as red squares if the switch is specifi
 TODO: add examples for the same photo for each neural network
 
 ### Standard Neural Network
+Results on the validation dataset:
 ```
 Accuracy of the network on the 10000 test images: 95 %
 Precision of noface : 95 %
@@ -83,14 +84,8 @@ F1 score of  face : 73 %
 ```
 
 ### Advanced neural network
-Results on the validation dataset (training on the first dataset):
-```
-Accuracy of the network on the 10000 test images: 97 %
-Accuracy of noface : 99 %
-Accuracy of  face : 82 %
-```
 
-Results on the validation dataset (training on the new dataset):
+Results on the validation dataset:
 ```
 Accuracy of the network on the 10000 test images: 98 %
 Precision of noface : 98 %
