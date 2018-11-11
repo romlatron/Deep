@@ -43,7 +43,15 @@ As squares are overlapping, we can have intersections between squares. To solve 
 TODO: add examples for same photo for each neural network
 
 ### Standard Neural Network
-Todo
+```
+Accuracy of the network on the 10000 test images: 95 %
+Precision of noface : 95 %
+Recall of noface : 99 %
+F1 score of noface : 97 %
+Precision of  face : 98 %
+Recall of  face : 57 %
+F1 score of  face : 73 %
+```
 
 ### Advanced neural network
 Results on the validation dataset (training on the first dataset):
@@ -55,9 +63,13 @@ Accuracy of  face : 82 %
 
 Results on the validation dataset (training on the new dataset):
 ```
-Accuracy of the network on the 10000 test images: 97 %
-Accuracy of noface : 99 %
-Accuracy of  face : 75 %
+Accuracy of the network on the 10000 test images: 98 %
+Precision of noface : 98 %
+Recall of noface : 99 %
+F1 score of noface : 98 %
+Precision of  face : 98 %
+Recall of  face : 84 %
+F1 score of  face : 90 %%
 ```
 
 ### GoogleNet/Inception
