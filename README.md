@@ -75,9 +75,13 @@ F1 score of  face : 90 %%
 ### GoogleNet/Inception
 Results on the validation dataset:
 ```
-Accuracy of the network on the 10000 test images: 94 %
-Accuracy of noface : 99 %
-Accuracy of  face : 52 %
+Accuracy of the network on the 10000 test images: 95 %
+Precision of noface : 95 %
+Recall of noface : 99 %
+F1 score of noface : 97 %
+Precision of  face : 97 %
+Recall of  face : 56 %
+F1 score of  face : 71 %
 ```
 
 ### Pre-trained models
