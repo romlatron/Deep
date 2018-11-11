@@ -69,7 +69,6 @@ After that, significant outliers are added to the image as yellow circles: We ca
 Finally, the other outliers are rendered as red squares if the switch is specified.
 
 ## Results and examples
-TODO: add examples for the same photo for each neural network
 
 ### Standard Neural Network
 Results on the validation dataset:
@@ -95,7 +94,7 @@ Precision of  face : 98 %
 Recall of  face : 84 %
 F1 score of  face : 90 %
 ```
-
+![alt text](https://github.com/romlatron/Deep/blob/master/results_advanced.png)
 ### GoogleNet/Inception
 Results on the validation dataset:
 ```
@@ -107,7 +106,7 @@ Precision of  face : 97 %
 Recall of  face : 56 %
 F1 score of  face : 71 %
 ```
-
+![alt text](https://github.com/romlatron/Deep/blob/master/results_inception.png)
 ### ResNet18 and transfer learning
 Results on the validation dataset:
 ```
@@ -119,7 +118,7 @@ Precision of  face : 99 %
 Recall of  face : 96 %
 F1 score of  face : 98 %
 ```
-
+![alt text](https://github.com/romlatron/Deep/blob/master/results_transferLearning.png)
 ## Improvements ideas
 Some improvements can include:
  - Collecting more data for the training, notabely color photos and faces
