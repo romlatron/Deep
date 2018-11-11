@@ -82,7 +82,7 @@ Precision of  face : 98 %
 Recall of  face : 57 %
 F1 score of  face : 73 %
 ```
-
+![alt text](https://github.com/romlatron/Deep/blob/master/results_previous.png)
 ### Advanced neural network
 
 Results on the validation dataset:
